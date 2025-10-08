@@ -164,6 +164,6 @@ validate(): boolean
 
 ## User Interaction
 
-[UI Journey 1](./images/UIjourneyLLM1.JPG)
-[UI Journey 2](./images/UIjourneyLLM2.JPG)
-[UI Journey 3](./images/UIjourneyLLM3.JPG)
+![UI Journey 1](./images/UIjourneyLLM1.JPG)
+![UI Journey 2](./images/UIjourneyLLM2.JPG)
+![UI Journey 3](./images/UIjourneyLLM3.JPG)
