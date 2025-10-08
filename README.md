@@ -146,18 +146,24 @@ upload(userAvailabilities: UserAvailabilities)
 
 generateAssignments()
 
-**requires** user is in the set of Users for both Availabilities and Preferences
+**requires** the set of Users for both Availabilities and Preferences are subsets of the current set of Users and no existing Assignments violate those Availabilities and Preferences
 
-**effects** generates an assignment of Users to the CookingDates via an algorithm that violates no constraints in Availabilities or Preferences
+**effects** generates an assignment of Users to the CookingDates via an algorithm that violates no constraints in Availabilities or Preferences and satisfies all prior existing Assignments
 
 generateAssignmentsWithLLM()
 
-**requires** user is in the set of Users for both Availabilities and Preferences
+**requires** the set of Users for both Availabilities and Preferences are subsets of the current set of Users and no existing Assignments violate those Availabilities and Preferences
 
-**effects** generates an assignment of Users to the CookingDates with an LLM that violates no constraints in Availabilities or Preferences
+**effects** generates an assignment of Users to the CookingDates with an LLM that violates no constraints in Availabilities or Preferences and satisfies all prior existing Assignments
 
 validate(): boolean
 
 **requires** no constraints in Preferences or Availabilities are violated across the Assignments
 
 **effects** returns True
+
+## User Interaction
+
+[UI Journey 1](./images/UIjourneyLLM1.JPG)
+[UI Journey 2](./images/UIjourneyLLM2.JPG)
+[UI Journey 3](./images/UIjourneyLLM3.JPG)
