@@ -44,6 +44,20 @@ export class CookScheduler {
   removeCook(user: User): User {
     assert(this.cooks.has(user));
     this.cooks.delete(user);
+    if (this.preferences.has(user)) {
+      this.preferences.delete(user);
+    }
+    if (this.availabilities.has(user)) {
+      this.availabilities.delete(user);
+    }
+    const datesToDelete: Array<Date> = [];
+    this.assignments.forEach((assignment, date) => {
+      if (assignment.lead.kerb === user.kerb) {
+        datesToDelete.push(assignment.date);
+      } else if (assignment.assistant?.kerb === user.kerb) {
+        assignment.assistant = undefined;
+      }
+    });
     return user;
   }
 
@@ -119,21 +133,111 @@ export class CookScheduler {
     this.assignments.delete(date);
   }
 
+  private checkPreference(assignment: Assignment, user: User): boolean {
+    const preference = this.preferences.get(user);
+    if (assignment.lead.kerb === user.kerb) {
+      if (assignment.assistant === undefined) {
+        if (preference && preference.canSolo === false) {
+          return false;
+        }
+      } else {
+        if (preference && preference.canLead === false) {
+          return false;
+        }
+      }
+    } else if (
+      assignment.assistant &&
+      assignment.assistant.kerb === user.kerb
+    ) {
+      if (preference && preference.canAssist === false) {
+        return false;
+      }
+    }
+    return true;
+  }
+  private checkAvailability(assignment: Assignment, user: User): boolean {
+    const availability = this.availabilities.get(user);
+    const date = assignment.date;
+    if (
+      availability &&
+      (assignment.lead.kerb === user.kerb ||
+        assignment.assistant?.kerb === user.kerb) &&
+      !availability.dates.has(date)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
   uploadPreference(preference: Preference) {
     const user = preference.user;
     assert(this.cooks.has(user));
     this.preferences.set(user, preference);
+
+    const datesToDelete: Array<Date> = [];
+    const allDates: Array<Date> = [];
+    let totalAssignments = 0;
+    this.assignments.forEach((assignment, date) => {
+      if (
+        assignment.lead.kerb === user.kerb ||
+        assignment.assistant?.kerb === user.kerb
+      ) {
+        totalAssignments += 1;
+        allDates.push(date);
+        if (this.checkPreference(assignment, user)) {
+          datesToDelete.push(date);
+        }
+      }
+    });
+    datesToDelete.forEach((date) => {
+      this.assignments.delete(date);
+    });
+    preference && totalAssignments > preference.maxCookingDays;
+    const extraDays = totalAssignments - preference.maxCookingDays;
+    for (let i = 1; i <= extraDays; i++) {
+      this.assignments.delete(allDates[-i]);
+    }
   }
 
   uploadAvailability(availability: Availability) {
     const user = availability.user;
     assert(this.cooks.has(user));
     this.availabilities.set(user, availability);
+
+    const datesToDelete: Array<Date> = [];
+
+    this.assignments.forEach((assignment, date) => {
+      if (
+        assignment.lead.kerb === user.kerb ||
+        assignment.assistant?.kerb === user.kerb
+      ) {
+        if (!this.checkAvailability(assignment, user)) {
+          datesToDelete.push(date);
+        }
+      }
+    });
+
+    datesToDelete.forEach((date) => {
+      this.assignments.delete(date);
+    });
   }
 
   async generateAssignments(): Promise<void> {}
 
   async generateAssignmentsWithLLM(): Promise<void> {}
+
+  private createPrompt(
+    preferences: Map<User, Preference>,
+    availabilities: Map<User, Availability>,
+    cookingDates: Set<Date>,
+    existingAssignments: Map<Date, Assignment>
+  ): string {
+    const prompt =
+      "You are a helpful LLM assistant that is helping a household manager assign cooks to a monthly calendar. ";
+    return prompt;
+  }
+
+  private parseResponse() {}
 
   validate(): boolean {
     return true;
