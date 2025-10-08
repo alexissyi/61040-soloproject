@@ -167,3 +167,5 @@ validate(): boolean
 ![UI Journey 1](./images/UIjourneyLLM1.JPG)
 ![UI Journey 2](./images/UIjourneyLLM2.JPG)
 ![UI Journey 3](./images/UIjourneyLLM3.JPG)
+
+**User Journey:** Once the members of the house have uploaded their preferences and availabilities, one of the foodstuds will want to make the cooking calendar for the month. They enter CookScheduler and see an empty calendar. Perhaps they already know who needs to be assigned to certain days; for example, maybe one member can only cook on one day in the entire month. They enter these known assignments into the calendar. Then they click on the generate (LLM) button to ask the LLM to generate a set of cooking assignments. After a few moments of waiting, the LLM's assignments are populated into the calendar. Maybe one or two days are empty; the foodstud then goes into the WILG slack to ask if anyone is able to expand their availability so they can fill those days.
