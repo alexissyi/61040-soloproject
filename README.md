@@ -131,11 +131,22 @@ a set of Assignment Assignments with
 invariants
 
 &ensp; all dates in CookingDates are in Month in Year
-&ensp; every Availability in Availabilities has a set of Dates that is a subset of CookingDates
 &ensp; every Preference in Preferences has a nonnegative, integer maxCookingDays
 &ensp; every Assignment in Assignments has a Date in CookingDates and a Lead in Cooks; if it has an Assistant, the Assistant is in Cooks
 
 **actions**
+
+addCook(user: User):
+
+**requires** no User is in Cooks with the same kerb as user
+
+**effects** adds user to Cooks
+
+removeCook(user: User):
+
+**requires** user is in Cooks
+
+**effects** removes user and any associated Preference, Availability or Assignments
 
 setMonth(month: number):
 
@@ -155,15 +166,20 @@ addCookingDate(date: Date):
 
 **effects** adds date to CookingDates
 
+removeCookingDate(date: Date):
+
+**requires** date is in CookingDates
+**effects** removes date from CookingDates
+
 assignLead(user: User, date: Date)
 
-**requires** date is in CookingDates; user is in the set of Users
+**requires** date is in CookingDates; user is in the set of Users; user has CanLead or CanSolo marked as True in their associated Preference
 
 **effects** creates a new Assignment with date and Lead set to user if there is no existing Assignment for this date, or updates an existing Assignment if there already is an Assignment for this date
 
 assignAssistant(user: User, date: Date)
 
-**requires** date is in CookingDates; user is in Cooks; there is already an Assignment with this date in the set of Assignments
+**requires** date is in CookingDates; user is in Cooks; there is already an Assignment with this date in the set of Assignments; the lead for that Assignment has CanLead marked as True in their associated Preference
 
 **effects** sets Assistant in the existing Assignment for this date to be user
 
