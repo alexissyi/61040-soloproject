@@ -1,182 +1,163 @@
-# DayPlanner 
-A simple day planner. This implementation focuses on the core concept of organizing activities for a single day with both manual and AI-assisted scheduling.
+## Augmented Concept
 
-## Concept: DayPlanner
+### Original Concept Specification (Unchanged):
 
-**Purpose**: Help you organize activities for a single day  
-**Principle**: You can add activities one at a time, assign them to times, and then observe the completed schedule
+**concept** CookingAssignments\[UserAvailabilities, UserPreferences, User\]
 
-### Core State
-- **Activities**: Set of activities with title, duration, and optional startTime
-- **Assignments**: Set of activity-to-time assignments
-- **Time System**: All times in half-hour slots starting at midnight (0 = 12:00 AM, 13 = 6:30 AM)
+**purpose** track cooking assignments for the month so we know who cooks when
 
-### Core Actions
-- `addActivity(title: string, duration: number): Activity`
-- `removeActivity(activity: Activity)`
-- `assignActivity(activity: Activity, startTime: number)`
-- `unassignActivity(activity: Activity)`
-- `requestAssignmentsFromLLM()` - AI-assisted scheduling with hardwired preferences
+**principle** after user availabilities and user preferences are uploaded, can automatically generate a set of cooking assignments, which can then be edited by foodstuds
 
-## Prerequisites
+**state**
 
-- **Node.js** (version 14 or higher)
-- **TypeScript** (will be installed automatically)
-- **Google Gemini API Key** (free at [Google AI Studio](https://makersuite.google.com/app/apikey))
+a Month
 
-## Quick Setup
+a set of dates CookingDates
 
-### 0. Clone the repo locally and navigate to it
-```cd intro-gemini-schedule```
+a set of Users
 
-### 1. Install Dependencies
+a UserAvailabilities Availabilities
 
-```bash
-npm install
-```
+a PreferredRoles Preferences
 
-### 2. Add Your API Key
+a set of Assignments with
 
-**Why use a template?** The `config.json` file contains your private API key and should never be committed to version control. The template approach lets you:
-- Keep the template file in git (safe to share)
-- Create your own `config.json` locally (keeps your API key private)
-- Easily set up the project on any machine
+&ensp; a date CookingDate
 
-**Step 1:** Copy the template file:
-```bash
-cp config.json.template config.json
-```
+&ensp; a Lead
 
-**Step 2:** Edit `config.json` and add your API key:
-```json
-{
-  "apiKey": "YOUR_GEMINI_API_KEY_HERE"
-}
-```
+&ensp; an Assistant (optional)
 
-**To get your API key:**
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy the key and paste it into `config.json` (replacing `YOUR_GEMINI_API_KEY_HERE`)
+**actions**
 
-### 3. Run the Application
+addCookingDate(date: Date):
 
-**Run all test cases:**
-```bash
-npm start
-```
+**requires** date is not in CookingDates and date is in Month
 
-**Run specific test cases:**
-```bash
-npm run manual    # Manual scheduling only
-npm run llm       # LLM-assisted scheduling only
-npm run mixed     # Mixed manual + LLM scheduling
-```
+**effects** adds date to CookingDates
 
-## File Structure
+assignLead(user: User, date: Date)
 
-```
-dayplanner/
-├── package.json              # Dependencies and scripts
-├── tsconfig.json             # TypeScript configuration
-├── config.json               # Your Gemini API key
-├── dayplanner-types.ts       # Core type definitions
-├── dayplanner.ts             # DayPlanner class implementation
-├── dayplanner-llm.ts         # LLM integration
-├── dayplanner-tests.ts       # Test cases and examples
-├── dist/                     # Compiled JavaScript output
-└── README.md                 # This file
-```
+**requires** date is in CookingDates; user is in the set of Users
 
-## Test Cases
+**effects** creates a new Assignment with date and Lead set to user if there is no existing Assignment for this date, or updates an existing Assignment if there already is an Assignment for this date
 
-The application includes three comprehensive test cases:
+assignAssistant(user: User, date: Date)
 
-### 1. Manual Scheduling
-Demonstrates adding activities and manually assigning them to time slots:
+**requires** date is in CookingDates; user is in the set of Users; there is already an Assignment with this date in the set of Assignments
 
-```typescript
-const planner = new DayPlanner();
-const breakfast = planner.addActivity('Breakfast', 1); // 30 minutes
-planner.assignActivity(breakfast, 14); // 7:00 AM
-```
+**effects** sets Assistant in the existing Assignment for this date to be user
 
-### 2. LLM-Assisted Scheduling
-Shows AI-powered scheduling with hardwired preferences:
+removeAssignment(date: Date)
 
-```typescript
-const planner = new DayPlanner();
-planner.addActivity('Morning Jog', 2);
-planner.addActivity('Math Homework', 4);
-await llm.requestAssignmentsFromLLM(planner);
-```
+**requires** there is an Assignment with this date in the set of Assignments
 
-### 3. Mixed Scheduling
-Combines manual assignments with AI assistance for remaining activities.
+**effects** removes this Assignment from the set of Assignments
 
-## Sample Output
+upload(preferredRoles: PreferredRoles)
 
-```
-📅 Daily Schedule
-==================
-7:00 AM - Breakfast (30 min)
-8:00 AM - Morning Workout (1 hours)
-10:00 AM - Study Session (1.5 hours)
-1:00 PM - Lunch (30 min)
-3:00 PM - Team Meeting (1 hours)
-7:00 PM - Dinner (30 min)
-9:00 PM - Evening Reading (1 hours)
+**requires** all Users in preferredRoles are in the set of Users
 
-📋 Unassigned Activities
-========================
-All activities are assigned!
-```
+**effects** sets Preferences to preferredRoles
 
-## Key Features
+upload(userAvailabilities: UserAvailabilities)
 
-- **Simple State Management**: Activities and assignments stored in memory
-- **Flexible Time System**: Half-hour slots from midnight (0-47)
-- **Query-Based Display**: Schedule generated on-demand, not stored sorted
-- **AI Integration**: Hardwired preferences in LLM prompt (no external hints)
-- **Conflict Detection**: Prevents overlapping activities
-- **Clean Architecture**: First principles implementation with no legacy code
+**requires** all Users in userAvailabilities are in the set of Users
 
-## LLM Preferences (Hardwired)
+**effects** sets Availabilities to userAvailabilities
 
-The AI uses these built-in preferences:
-- Exercise activities: Morning (6:00 AM - 10:00 AM)
-- Study/Classes: Focused hours (9:00 AM - 5:00 PM)
-- Meals: Regular intervals (breakfast 7-9 AM, lunch 12-1 PM, dinner 6-8 PM)
-- Social/Relaxation: Evenings (6:00 PM - 10:00 PM)
-- Avoid: Demanding activities after 10:00 PM
+generateAssignments()
 
-## Troubleshooting
+**requires** user is in the set of Users for both Availabilities and Preferences
 
-### "Could not load config.json"
-- Ensure `config.json` exists with your API key
-- Check JSON format is correct
+**effects** generates an assignment of Users to the CookingDates that violates no constraints in Availabilities or Preferences
 
-### "Error calling Gemini API"
-- Verify API key is correct
-- Check internet connection
-- Ensure API access is enabled in Google AI Studio
+validate(): boolean
 
-### Build Issues
-- Use `npm run build` to compile TypeScript
-- Check that all dependencies are installed with `npm install`
+**requires** no constraints in Preferences or Availabilities are violated across the Assignments
 
-## Next Steps
+**effects** returns True
 
-Try extending the DayPlanner:
-- Add weekly scheduling
-- Implement activity categories
-- Add location information
-- Create a web interface
-- Add conflict resolution strategies
-- Implement recurring activities
+### LLM-Augmented Concept Specification:
 
-## Resources
+**concept** CookingAssignments\[UserAvailabilities, UserPreferences, User\]
 
-- [Google Generative AI Documentation](https://ai.google.dev/docs)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+**purpose** track cooking assignments for the month so we know who cooks when
+
+**principle** after user availabilities and user preferences are uploaded, can generate a set of cooking assignments either algorithmically or via an LLM; this set of cooking assignments can be further edited
+
+**state**
+
+a Month
+
+a set of dates CookingDates
+
+a set of Users
+
+a UserAvailabilities Availabilities
+
+a PreferredRoles Preferences
+
+a set of Assignments with
+
+&ensp; a date CookingDate
+
+&ensp; a Lead
+
+&ensp; an Assistant (optional)
+
+**actions**
+
+addCookingDate(date: Date):
+
+**requires** date is not in CookingDates and date is in Month
+
+**effects** adds date to CookingDates
+
+assignLead(user: User, date: Date)
+
+**requires** date is in CookingDates; user is in the set of Users
+
+**effects** creates a new Assignment with date and Lead set to user if there is no existing Assignment for this date, or updates an existing Assignment if there already is an Assignment for this date
+
+assignAssistant(user: User, date: Date)
+
+**requires** date is in CookingDates; user is in the set of Users; there is already an Assignment with this date in the set of Assignments
+
+**effects** sets Assistant in the existing Assignment for this date to be user
+
+removeAssignment(date: Date)
+
+**requires** there is an Assignment with this date in the set of Assignments
+
+**effects** removes this Assignment from the set of Assignments
+
+upload(preferredRoles: PreferredRoles)
+
+**requires** all Users in preferredRoles are in the set of Users
+
+**effects** sets Preferences to preferredRoles
+
+upload(userAvailabilities: UserAvailabilities)
+
+**requires** all Users in userAvailabilities are in the set of Users
+
+**effects** sets Availabilities to userAvailabilities
+
+generateAssignments()
+
+**requires** user is in the set of Users for both Availabilities and Preferences
+
+**effects** generates an assignment of Users to the CookingDates via an algorithm that violates no constraints in Availabilities or Preferences
+
+generateAssignmentsWithLLM()
+
+**requires** user is in the set of Users for both Availabilities and Preferences
+
+**effects** generates an assignment of Users to the CookingDates with an LLM that violates no constraints in Availabilities or Preferences
+
+validate(): boolean
+
+**requires** no constraints in Preferences or Availabilities are violated across the Assignments
+
+**effects** returns True
