@@ -308,8 +308,8 @@ export class CookScheduler {
     Each user has a set of dates they are available. 
     
     Each user also has a set of preferences that specify:
-    1) canSolo: whether they are willing to cook solo (in which case they are a lead cook without an assistant); 
-    2) canLead: whether they are willing to be lead cook in a pair of cooks and 3) whether they are willing to be an assistant cook in a pair of cooks. 
+    1) canSolo: whether they are willing to cook solo (in which case they are a lead cook without an assistant)
+    2) canLead: whether they are willing to be lead cook in a pair of cooks
     3) canAssist: whether they are willing to be an assistant cook in a pair of cooks
     4) maxCookingDays: maximum number of days they are willing to cook for the month.
     

@@ -235,6 +235,125 @@ Test Case 3: More complex scenario for the LLM with varying availabilities and p
 
 Test Case 4: Similarly complex scenario as in test case 3, but here at least one day will have to be empty due to availability and preference constraints.
 
+Prompt Variant 1:
+
+const prompt = `You are a helpful LLM assistant that is helping a household manager assign users to a monthly calendar for the month of ${this.month}, ${this.year}.
+
+    Each user has a set of dates they are available.
+
+    Each user also has a set of preferences that specify whether they are willing to cook solo (in which case they are a lead cook without an assistant, whether they are willing to be lead cook in a pair of cooks and whether they are willing to be an assistant cook in a pair of cooks.
+
+    Here are the preferences for each user:
+
+    ${preferencesSection}
+
+    Here are the availabilities for each user:
+
+    ${availabilitiesSection}
+
+    These are the cooking dates: ${cookingDatesSection}. For each date, we want a lead cook, and optionally an assistant cook.
+
+    Finally, here are some existing assignments that need to be preserved: ${this.assignments}.
+
+    Create a proposed calendar assigning users to be either lead or assistant cook for each date, with these critical requirements:
+
+    ${criticalRequirements}
+
+    Return your response as a JSON object with this exact structure:
+    {
+    "assignments": [
+        {
+        "date": "a date in YYYY-MM-DD format"
+        "leadKerb": "user name",
+        "assistantKerb": "user name"
+        }
+    ]
+    }
+
+    Return ONLY the JSON object, no additional text.`;
+
+Prompt Variant 2:
+
+    const prompt = `You are a helpful LLM assistant that is helping a household manager assign users to a monthly calendar for the month of ${this.month}, ${this.year}.
+
+    Each user has a set of dates they are available.
+
+    Each user also has a set of preferences that specify:
+    1) canSolo: whether they are willing to cook solo (in which case they are a lead cook without an assistant)
+    2) canLead: whether they are willing to be lead cook in a pair of cooks
+    3) canAssist: whether they are willing to be an assistant cook in a pair of cooks
+    4) maxCookingDays: maximum number of days they are willing to cook for the month.
+
+    Here are the preferences for each user:
+
+    ${preferencesSection}
+
+    Here are the availabilities for each user:
+
+    ${availabilitiesSection}
+
+    These are the cooking dates: ${cookingDatesSection}. For each date, we want a lead cook, and optionally an assistant cook.
+
+    Finally, here are some existing assignments that need to be preserved: ${this.assignments}.
+
+    Create a proposed calendar assigning users to be either lead or assistant cook for each date.
+
+    Return your response as a JSON object with this exact structure:
+    {
+    "assignments": [
+        {
+        "date": "a date in YYYY-MM-DD format"
+        "leadKerb": "user name",
+        "assistantKerb": "user name"
+        }
+    ]
+    }
+
+    Return ONLY the JSON object, no additional text.`;
+
+Prompt Variant 3:
+
+    const prompt = `You are a helpful LLM assistant that is helping a household manager assign users to a monthly calendar for the month of ${this.month}, ${this.year}.
+
+    Each user has a set of dates they are available.
+
+    Each user also has a set of preferences that specify:
+    1) canSolo: whether they are willing to cook solo (in which case they are a lead cook without an assistant)
+    2) canLead: whether they are willing to be lead cook in a pair of cooks
+    3) canAssist: whether they are willing to be an assistant cook in a pair of cooks
+    4) maxCookingDays: maximum number of days they are willing to cook for the month.
+
+    Here are the preferences for each user:
+
+    ${preferencesSection}
+
+    Here are the availabilities for each user:
+
+    ${availabilitiesSection}
+
+    These are the cooking dates: ${cookingDatesSection}. For each date, we want a lead cook, and optionally an assistant cook.
+
+    Finally, here are some existing assignments that need to be preserved: ${this.assignments}.
+
+    Create a proposed calendar assigning users to be either lead or assistant cook for each date, with these critical requirements:
+
+    ${criticalRequirements}
+
+    Return your response as a JSON object with this exact structure:
+    {
+    "assignments": [
+        {
+        "date": "a date in YYYY-MM-DD format"
+        "leadKerb": "user name",
+        "assistantKerb": "user name"
+        }
+    ]
+    }
+
+    Return ONLY the JSON object, no additional text.`;
+
+There are still a lot of problems with LLMs violating role preference constraints despite this being emphasized in the prompt. May have to further tweak prompts.
+
 ## Validators
 
 There are many possible issues. 1) LLM violates someone's availability and assigns them a date they are not available. 2) LLM violates someone's role preferences; for example, they assign a person to be a solo cook when they said they could not solo cook. 3) LLM violates someone's max cooking day preferences by assigning them to too many days. These issues are checked via the validate function and the internal checkAvailability and checkPreference functions.
