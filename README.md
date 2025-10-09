@@ -225,8 +225,16 @@ validate(): boolean
 ![UI Journey 2](./images/UIjourneyLLM2.JPG)
 ![UI Journey 3](./images/UIjourneyLLM3.JPG)
 
-**User Journey:** Once the members of the house have uploaded their preferences and availabilities, one of the foodstuds will want to make the cooking calendar for the month. They enter CookScheduler and see an empty calendar. Perhaps they already know who needs to be assigned to certain days; for example, maybe one member can only cook on one day in the entire month. They enter these known assignments into the calendar. Then they click on the generate (LLM) button to ask the LLM to generate a set of cooking assignments. After a few moments of waiting, the LLM's assignments are populated into the calendar. Maybe one or two days are empty; the foodstud then goes into the WILG slack to ask if anyone is able to expand their availability so they can fill those days.
+**User Journey:** Once the members of the house have uploaded their preferences and availabilities, one of the foodstuds will want to make the cooking calendar for the month. They enter CookScheduler and see an empty calendar. Perhaps they already know who needs to be assigned to certain days; for example, maybe one member can only cook on one day in the entire month. They enter these known assignments into the calendar. Then they click on the generate (LLM) button to ask the LLM to generate a set of cooking assignments. After a few moments of waiting, the LLM's assignments are populated into the calendar. Maybe one or two days are empty; the foodstud then goes into the WILG slack to ask if anyone is able to expand their availability so they can fill those days. In the event that the LLM fails to generate a successful set of assignments, the calendar will just stay empty, and the user will get a pop-up indicating that the LLM failed.
 
 ## Richer Test Cases
 
+Test Case 2: Simple run of the LLM feature, seeing if it can handle the very easy case of just 1 day and 1 cook.
+
+Test Case 3: More complex scenario for the LLM with varying availabilities and preferences, which preclude certain assignments. However, it is possible to populate all the days.
+
+Test Case 4: Similarly complex scenario as in test case 3, but here at least one day will have to be empty due to availability and preference constraints.
+
 ## Validators
+
+There are many possible issues. 1) LLM violates someone's availability and assigns them a date they are not available. 2) LLM violates someone's role preferences; for example, they assign a person to be a solo cook when they said they could not solo cook. 3) LLM violates someone's max cooking day preferences by assigning them to too many days. These issues are checked via the validate function and the internal checkAvailability and checkPreference functions.

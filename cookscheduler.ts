@@ -1,6 +1,24 @@
 import { GeminiLLM } from "./gemini-llm";
 import assert from "assert";
 
+// all dates represented in YYYY-MM-DD string format
+
+function getMonth(dateString: string): number {
+  const monthString: string = dateString.slice(5, 7);
+  return Number(monthString);
+}
+
+function getYear(dateString: string): number {
+  const yearString: string = dateString.slice(0, 4);
+  return Number(yearString);
+}
+
+export interface JSONAssignment {
+  leadKerb: string;
+  assistantKerb?: string;
+  date: string;
+}
+
 export interface User {
   kerb: string;
 }
@@ -8,12 +26,12 @@ export interface User {
 export interface Assignment {
   lead: User;
   assistant?: User;
-  date: Date;
+  date: string;
 }
 
 export interface Availability {
   user: User;
-  dates: Set<Date>;
+  dates: Set<string>;
 }
 
 export interface Preference {
@@ -27,33 +45,33 @@ export interface Preference {
 export class CookScheduler {
   private month: number = 0;
   private year: number = 0;
-  private cooks: Set<User> = new Set();
-  private cookingDates: Set<Date> = new Set();
+  private cooks: Map<string, User> = new Map();
+  private cookingDates: Set<string> = new Set();
   private availabilities: Map<User, Availability> = new Map();
   private preferences: Map<User, Preference> = new Map();
-  private assignments: Map<Date, Assignment> = new Map();
+  private assignments: Map<string, Assignment> = new Map();
 
   addCook(user: User): User {
     this.cooks.forEach((cook) => {
       assert(cook.kerb !== user.kerb);
     });
-    this.cooks.add(user);
+    this.cooks.set(user.kerb, user);
     return user;
   }
 
   removeCook(user: User): User {
-    assert(this.cooks.has(user));
-    this.cooks.delete(user);
+    assert(this.cooks.has(user.kerb));
+    this.cooks.delete(user.kerb);
     if (this.preferences.has(user)) {
       this.preferences.delete(user);
     }
     if (this.availabilities.has(user)) {
       this.availabilities.delete(user);
     }
-    const datesToDelete: Array<Date> = [];
+    const datesToDelete: Array<string> = [];
     this.assignments.forEach((assignment, date) => {
       if (assignment.lead.kerb === user.kerb) {
-        datesToDelete.push(assignment.date);
+        datesToDelete.push(date);
       } else if (assignment.assistant?.kerb === user.kerb) {
         assignment.assistant = undefined;
       }
@@ -63,10 +81,10 @@ export class CookScheduler {
 
   setMonth(month: number): number {
     this.assignments.forEach((assignment) => {
-      assert(assignment.date.getMonth() === month);
+      assert(getMonth(assignment.date) === month);
     });
     this.cookingDates.forEach((date) => {
-      assert(date.getMonth() === month);
+      assert(getMonth(date) === month);
     });
     this.month = month;
     return this.month;
@@ -74,25 +92,31 @@ export class CookScheduler {
 
   setYear(year: number): number {
     this.assignments.forEach((assignment) => {
-      assert(assignment.date.getFullYear() === year);
+      assert(getYear(assignment.date) === year);
     });
     this.cookingDates.forEach((date) => {
-      assert(date.getFullYear() === year);
+      assert(getYear(date) === year);
     });
     this.year = year;
     return this.year;
   }
 
-  addCookingDate(date: Date): Date {
-    assert(date.getMonth() === this.month);
-    assert(date.getFullYear() === this.year);
+  addCookingDate(date: string): string {
+    assert(getMonth(date) === this.month);
+    assert(getYear(date) === this.year);
     this.cookingDates.add(date);
     return date;
   }
 
-  assignLead(user: User, date: Date) {
+  removeCookingDate(date: string): string {
     assert(this.cookingDates.has(date));
-    assert(this.cooks.has(user));
+    this.cookingDates.delete(date);
+    return date;
+  }
+
+  assignLead(user: User, date: string) {
+    assert(this.cookingDates.has(date));
+    assert(this.cooks.has(user.kerb));
     assert(this.availabilities.get(user)?.dates.has(date));
     assert(
       this.preferences.get(user)?.canLead === true ||
@@ -113,22 +137,25 @@ export class CookScheduler {
     }
   }
 
-  assignAssistant(user: User, date: Date) {
+  assignAssistant(user: User, date: string) {
     assert(this.cookingDates.has(date));
-    assert(this.cooks.has(user));
+    assert(this.cooks.has(user.kerb));
     assert(this.availabilities.get(user)?.dates.has(date));
-    assert(this.preferences.get(user)?.canAssist === true);
+    assert(
+      this.preferences.get(user)?.canAssist,
+      `${user.kerb} cannot assist: ${this.preferences.get(user)}`
+    );
     assert(this.assignments.has(date));
 
     const assignment = this.assignments.get(date);
     if (assignment) {
       const lead = assignment.lead;
-      assert(this.preferences.get(lead)?.canLead === true);
+      assert(this.preferences.get(lead)?.canLead);
       assignment.assistant = user;
     }
   }
 
-  removeAssignment(date: Date) {
+  removeAssignment(date: string) {
     assert(this.assignments.has(date));
     this.assignments.delete(date);
   }
@@ -137,11 +164,11 @@ export class CookScheduler {
     const preference = this.preferences.get(user);
     if (assignment.lead.kerb === user.kerb) {
       if (assignment.assistant === undefined) {
-        if (preference && preference.canSolo === false) {
+        if (preference && !preference.canSolo) {
           return false;
         }
       } else {
-        if (preference && preference.canLead === false) {
+        if (preference && !preference.canLead) {
           return false;
         }
       }
@@ -149,7 +176,7 @@ export class CookScheduler {
       assignment.assistant &&
       assignment.assistant.kerb === user.kerb
     ) {
-      if (preference && preference.canAssist === false) {
+      if (preference && !preference.canAssist) {
         return false;
       }
     }
@@ -171,11 +198,11 @@ export class CookScheduler {
 
   uploadPreference(preference: Preference) {
     const user = preference.user;
-    assert(this.cooks.has(user));
+    assert(this.cooks.has(user.kerb));
     this.preferences.set(user, preference);
 
-    const datesToDelete: Array<Date> = [];
-    const allDates: Array<Date> = [];
+    const datesToDelete: Array<string> = [];
+    const allDates: Array<string> = [];
     let totalAssignments = 0;
     this.assignments.forEach((assignment, date) => {
       if (
@@ -201,10 +228,10 @@ export class CookScheduler {
 
   uploadAvailability(availability: Availability) {
     const user = availability.user;
-    assert(this.cooks.has(user));
+    assert(this.cooks.has(user.kerb));
     this.availabilities.set(user, availability);
 
-    const datesToDelete: Array<Date> = [];
+    const datesToDelete: Array<string> = [];
 
     this.assignments.forEach((assignment, date) => {
       if (
@@ -254,8 +281,17 @@ export class CookScheduler {
     });
     let availabilitiesSection = "";
     this.availabilities.forEach((availability, user) => {
-      availabilitiesSection += user.kerb + ": " + `{ ${availability}}`;
+      const stringDates: Array<string> = [];
+      availability.dates.forEach((date) => {
+        stringDates.push(date);
+      });
+      availabilitiesSection +=
+        user.kerb + ": " + `{ ${stringDates.join(";  ")}}`;
       availabilitiesSection += "\n";
+    });
+    let cookingDatesSection = "";
+    this.cookingDates.forEach((date) => {
+      cookingDatesSection += date + "; ";
     });
 
     let criticalRequirements = `
@@ -285,7 +321,7 @@ export class CookScheduler {
     
     ${availabilitiesSection}
     
-    These are the cooking dates: ${this.cookingDates}. For each date, we want a lead cook, and optionally an assistant cook.
+    These are the cooking dates: ${cookingDatesSection}. For each date, we want a lead cook, and optionally an assistant cook.
 
     Finally, here are some existing assignments that need to be preserved: ${this.assignments}.
 
@@ -297,9 +333,9 @@ export class CookScheduler {
     {
     "assignments": [
         {
-        "date": "a date in Date format"
-        "lead": "user name",
-        "assistant": "user name"
+        "date": "a date in YYYY-MM-DD format"
+        "leadKerb": "user name",
+        "assistantKerb": "user name"
         }
     ]
     }
@@ -323,7 +359,27 @@ export class CookScheduler {
         throw new Error("Invalid response format");
       }
 
-      const assignments: Array<Assignment> = response.assignments;
+      const assignmentsJSON: Array<JSONAssignment> = response.assignments;
+      const assignments: Array<Assignment> = [];
+
+      assignmentsJSON.forEach((assignmentJSON) => {
+        const date = assignmentJSON.date;
+        const lead = this.cooks.get(assignmentJSON.leadKerb);
+        assert(date !== undefined);
+        assert(lead !== undefined);
+        const assignment: Assignment = { date, lead };
+
+        if (assignmentJSON.assistantKerb) {
+          const assistant = this.cooks.get(assignmentJSON.assistantKerb);
+          assignment["assistant"] = assistant;
+        }
+
+        assignments.push(assignment);
+      });
+
+      console.log("Generated following assignments");
+
+      console.log(assignments);
 
       this.validate(assignments);
 
