@@ -1,5 +1,5 @@
 /**
- * DayPlanner Test Cases
+ * CookScheduler Test Cases
  *
  * Demonstrates both manual scheduling and LLM-assisted scheduling
  */
