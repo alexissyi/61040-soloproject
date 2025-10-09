@@ -330,7 +330,10 @@ export class CookScheduler {
       console.log("📝 Applying LLM assignments...");
 
       assignments.forEach((assignment) => {
-        this.assignments.set(assignment.date, assignment);
+        this.assignLead(assignment.lead, assignment.date);
+        if (assignment.assistant) {
+          this.assignAssistant(assignment.assistant, assignment.date);
+        }
       });
     } catch (error) {
       console.error("❌ Error parsing LLM response:", (error as Error).message);
@@ -339,8 +342,8 @@ export class CookScheduler {
     }
   }
 
-  getAssignments(): Map<Date, Assignment> {
-    const assignmentsCopy: Map<Date, Assignment> = new Map();
+  getAssignments(): Array<Assignment> {
+    const assignmentsCopy: Array<Assignment> = [];
     this.assignments.forEach((assignment, date) => {
       const lead = assignment.lead;
       const assistant = assignment.assistant;
@@ -349,7 +352,7 @@ export class CookScheduler {
         lead,
         assistant,
       };
-      assignmentsCopy.set(date, assignmentCopy);
+      assignmentsCopy.push(assignmentCopy);
     });
     return assignmentsCopy;
   }
